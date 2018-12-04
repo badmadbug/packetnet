@@ -203,16 +203,49 @@ namespace PacketDotNet
                     result.ByteArraySegment = Header.EncapsulatedBytes();
                 }
 
+                // org code check twice with l2TPport. I'm not sure why.
                 const Int32 l2TPport = 1701;
-                if (DestinationPort.Equals(l2TPport) && DestinationPort.Equals(l2TPport))
+                if (DestinationPort.Equals(l2TPport))// && DestinationPort.Equals(l2TPport))
                 {
                     var payload = Header.EncapsulatedBytes();
                     result.Packet = new L2TPPacket(payload, this);
                 }
 
+                // no sub-packet parsed.
+                if (result.Packet == null)
+                {
+                    Type packetType;
+                    if (SubPacketBySrc.TryGetValue(SourcePort, out packetType))
+                    {
+                        var payload = Header.EncapsulatedBytes();
+                        var obj = Activator.CreateInstance(packetType, payload);
+                        result.Packet = (Packet)obj;
+                    }
+                    else if (SubPacketByDst.TryGetValue(DestinationPort, out packetType))
+                    {
+                        var payload = Header.EncapsulatedBytes();
+                        var obj = Activator.CreateInstance(packetType, payload);
+                        result.Packet = (Packet)obj;
+                    }
+                    else
+                    {
+                        UInt32 key = SourcePort * (UInt32)0x010000 + DestinationPort;
+                        if (SubPacketBySrcDst.TryGetValue(key, out packetType))
+                        {
+                            var payload = Header.EncapsulatedBytes();
+                            var obj = Activator.CreateInstance(packetType, payload);
+                            result.Packet = (Packet)obj;
+                        }
+                    }
+                }
+
                 return result;
             });
         }
+
+        public static Dictionary<UInt16, Type> SubPacketBySrc = new Dictionary<UInt16, Type>();
+        public static Dictionary<UInt16, Type> SubPacketByDst = new Dictionary<UInt16, Type>();
+        public static Dictionary<UInt32, Type> SubPacketBySrcDst = new Dictionary<UInt32, Type>();
 
         /// <summary>
         /// Constructor

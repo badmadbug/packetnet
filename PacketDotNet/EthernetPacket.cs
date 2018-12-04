@@ -203,6 +203,22 @@ namespace PacketDotNet
         }
 
         /// <summary>
+        /// user defined packets
+        /// </summary>
+        public static Dictionary<int, Type> SubPacketTypes = new Dictionary<int, Type>()
+        {
+            /* these packets are handled in switch state.
+            { (int)EthernetPacketType.IPv4, typeof(IPv4Packet) },
+            { (int)EthernetPacketType.IPv6, typeof(IPv6Packet) },
+            { (int)EthernetPacketType.Arp, typeof(ARPPacket) },
+            { (int)EthernetPacketType.LLDP, typeof(LLDPPacket) },
+            { (int)EthernetPacketType.PointToPointProtocolOverEthernetSessionStage, typeof(PPPoEPacket) },
+            { (int)EthernetPacketType.WakeOnLan, typeof(WakeOnLanPacket) },
+            { (int)EthernetPacketType.VLanTaggedFrame, typeof(Ieee8021QPacket) },
+            */
+        };
+
+        /// <summary>
         /// Used by the EthernetPacket constructor. Located here because the LinuxSLL constructor
         /// also needs to perform the same operations as it contains an ethernet type
         /// </summary>
@@ -250,7 +266,17 @@ namespace PacketDotNet
                 case EthernetPacketType.VLanTaggedFrame:
                     payloadPacketOrData.Packet = new Ieee8021QPacket(payload);
                     break;
-                default: // consider the sub-packet to be a byte array
+                default:
+                    // try to find extended sub-packets.
+                    Type packetType;
+                    if (SubPacketTypes.TryGetValue((int)type, out packetType))
+                    {
+                        var obj = Activator.CreateInstance(packetType, payload);
+                        payloadPacketOrData.Packet = (Packet)obj;
+                        break;
+                    }
+
+                    // consider the sub-packet to be a byte array
                     payloadPacketOrData.ByteArraySegment = payload;
                     break;
             }

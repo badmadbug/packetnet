@@ -314,8 +314,7 @@ namespace PacketDotNet
         /// <returns>
         /// A <see cref="Packet" />
         /// </returns>
-        public static Packet ParsePacket
-        (
+        public static Packet ParsePacket(
             LinkLayers linkLayer,
             Byte[] packetData)
         {

@@ -19,6 +19,7 @@ along with PacketDotNet.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -219,6 +220,11 @@ namespace PacketDotNet
         }
 
         /// <summary>
+        /// user defined packets
+        /// </summary>
+        public static Dictionary<int, Type> SubPacketTypes = new Dictionary<int, Type>();
+
+        /// <summary>
         /// Called by IPv4 and IPv6 packets to parse their packet payload
         /// </summary>
         /// <param name="payload">
@@ -298,6 +304,14 @@ namespace PacketDotNet
 
                 // NOTE: new payload parsing entries go here
                 default:
+                    Type packetType;
+                    if ( SubPacketTypes.TryGetValue((int)protocolType, out packetType))
+                    {
+                        var obj = Activator.CreateInstance(packetType, payload);
+                        payloadPacketOrData.Packet = (Packet)obj;
+                        break;
+                    }
+
                     payloadPacketOrData.ByteArraySegment = payload;
                     break;
             }
