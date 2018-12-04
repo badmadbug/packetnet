@@ -298,6 +298,11 @@ namespace PacketDotNet
         }
 
         /// <summary>
+        /// user can use this freely.
+        /// </summary>
+        public virtual object Tag { get; set; }
+
+        /// <summary>
         /// Parse bytes into a packet
         /// </summary>
         /// <param name="linkLayer">
